@@ -472,6 +472,11 @@ module HappyMapper
     end
   end
 
+  #  Override method to add namespace definitions to node attributes
+  def add_namespace_definitions?
+    false
+  end
+
   #
   # Create an xml representation of the specified class based on defined
   # HappyMapper elements and attributes. The method is defined in a way
@@ -701,6 +706,15 @@ module HappyMapper
 
           end
 
+        end
+      end
+
+      #
+      # Add namespace definitions to element attributes unless root object
+      #
+      if add_namespace_definitions? && builder.doc.root != builder.parent
+        builder.parent.namespaces.each do |name, value|
+          builder.parent[name] = value
         end
       end
 

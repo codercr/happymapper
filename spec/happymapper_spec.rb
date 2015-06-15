@@ -693,6 +693,14 @@ describe HappyMapper do
      end
   end
 
+  describe "#add_namespace_definitions?" do
+    it "return false by default" do
+      State.content :name
+      address = Address.parse(fixture_file('address.xml'))
+      address.add_namespace_definitions?.should be_false
+    end
+  end
+
   it "should parse xml attributes into ruby objects" do
     posts = Post.parse(fixture_file('posts.xml'))
     posts.size.should == 20

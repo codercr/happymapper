@@ -110,16 +110,17 @@ describe "Saving #to_xml", "with xml namespaces" do
 
   context "#to_xml", "with namespaces" do
 
-    let(:subject) do
+    let(:address) do
       address = ToXMLWithNamespaces::Address.new('street' => 'Mockingbird Lane',
-      'location' => 'Home',
-      'housenumber' => '1313',
-      'postcode' => '98103',
-      'city' => 'Seattle',
-      'country' => ToXMLWithNamespaces::Country.new(:name => 'USA', :code => 'us'),
-      'date_created' => '2011-01-01 15:00:00')
+          'location' => 'Home',
+          'housenumber' => '1313',
+          'postcode' => '98103',
+          'city' => 'Seattle',
+          'country' => ToXMLWithNamespaces::Country.new(:name => 'USA', :code => 'us'),
+          'date_created' => '2011-01-01 15:00:00')
+    end
 
-
+    let(:subject) do
       address.dates_updated = ["2011-01-01 16:01:00","2011-01-02 11:30:01"]
 
       Nokogiri::XML(address.to_xml).root
@@ -183,6 +184,47 @@ describe "Saving #to_xml", "with xml namespaces" do
 
       it "saves elements" do
         expect(subject.xpath('country:country/countryName:countryName').text).to eq "USA"
+      end
+    end
+
+    context "when add_namespace_definitions? is false" do
+      it "writes the default namespace to xml without adding xmlns to country element attributes" do
+        ToXMLWithNamespaces::Country.any_instance.should_receive(:add_namespace_definitions?).and_call_original
+        subject.namespace_definitions.find {|x| x.prefix == 'countryName' }
+            .href.should == "http://www.company.com/countryName"
+        subject.namespace_definitions.find {|x| x.prefix == 'country' }
+            .href.should == "http://www.company.com/country"
+
+        country = subject.xpath('country:country').first
+        country.namespace_definitions.find {|x| x.prefix == 'countryName' }.should be_nil
+        country.namespace_definitions.find {|x| x.prefix == 'country' }.should be_nil
+      end
+    end
+
+    context "when add_namespace_definitions? is true" do
+      context "when element is not root document" do
+        it "writes the default namespace to xml without adding xmlns to country element attributes" do
+          ToXMLWithNamespaces::Country.any_instance.should_receive(:add_namespace_definitions?).and_return(true)
+          subject.namespace_definitions.find {|x| x.prefix == 'countryName' }
+              .href.should == "http://www.company.com/countryName"
+          subject.namespace_definitions.find {|x| x.prefix == 'country' }
+              .href.should == "http://www.company.com/country"
+
+          country = subject.xpath('country:country').first
+          country.namespace_definitions.find {|x| x.prefix == 'countryName' }
+              .href.should == "http://www.company.com/countryName"
+          country.namespace_definitions.find {|x| x.prefix == 'country' }
+              .href.should == "http://www.company.com/country"
+        end
+      end
+
+      context "when element is root document" do
+        it "writes the default namespace to xml without adding xmlns to country element attributes" do
+          result1 = address.to_xml
+          ToXMLWithNamespaces::Address.any_instance.should_receive(:add_namespace_definitions?).and_return(true)
+          result2 = address.to_xml
+          result1.should == result2
+        end
       end
     end
   end
